@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 from workflow.graph.builder import build_translation_workflow
+from workflow.utils.model_loader import set_model_id, DEFAULT_MODEL_ID
 
 BATCH_DELIMITER = " ||| "
 
@@ -68,12 +69,20 @@ def process_data(data, app, skip_fields=None):
         return data
 
 def main():
-    parser = argparse.ArgumentParser(description="Chạy translation pipeline cho file JSON.")
-    parser.add_argument("--input_file", type=str, required=True, help="Đường dẫn đến file JSON đầu vào")
-    parser.add_argument("--output_name", type=str, required=True, help="Đường dẫn đến file JSON đầu ra")
-    parser.add_argument("--skip_fields", type=str, default="", help="Danh sách các trường bỏ qua dịch, cách nhau bằng dấu phẩy (vd: role,id,timestamp)")
+    parser = argparse.ArgumentParser(description="Chay translation pipeline cho file JSON.")
+    parser.add_argument("--input_file", type=str, required=True, help="Duong dan den file JSON dau vao")
+    parser.add_argument("--output_name", type=str, required=True, help="Duong dan den file JSON dau ra")
+    parser.add_argument("--skip_fields", type=str, default="", help="Danh sach cac truong bo qua dich, cach nhau bang dau phay (vd: role,id,timestamp)")
+    parser.add_argument("--model", type=str, default=DEFAULT_MODEL_ID, help=f"Model ID de tai (default: {DEFAULT_MODEL_ID})")
     
     args = parser.parse_args()
+    
+    # Set model ID neu duoc chi dinh
+    if args.model != DEFAULT_MODEL_ID:
+        print(f"Using custom model: {args.model}")
+        set_model_id(args.model)
+    else:
+        print(f"Using default model: {DEFAULT_MODEL_ID}")
     
     if not os.path.exists(args.input_file):
         print(f"Loi: Khong tim thay file '{args.input_file}'.")

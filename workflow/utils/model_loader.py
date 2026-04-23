@@ -2,10 +2,28 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from sentence_transformers import SentenceTransformer
 
-MODEL_ID = "Qwen/Qwen3-30B-A3B-Instruct-2507"
+# Default model
+DEFAULT_MODEL_ID = "Qwen/Qwen3-30B-A3B-Instruct-2507"
+MODEL_ID = DEFAULT_MODEL_ID
 
 _tokenizer = None
 _model = None
+
+def set_model_id(model_id):
+    """
+    Set model ID before loading. Should be called before get_model_and_tokenizer().
+    """
+    global MODEL_ID
+    MODEL_ID = model_id
+    print(f"Model ID set to: {MODEL_ID}")
+
+def reset_model():
+    """
+    Reset loaded model (for testing or switching models).
+    """
+    global _tokenizer, _model
+    _model = None
+    _tokenizer = None
 
 def get_model_and_tokenizer():
     """
