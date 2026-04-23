@@ -7,6 +7,7 @@ Follow these rules strictly:
 2. Output ONLY the translated Vietnamese text.
 3. DO NOT include any introductory phrases, explanations, variations, or conversational fillers (e.g., do not say "Here is the translation:", "Dưới đây là bản dịch:", etc.).
 4. When translating batch items separated by " ||| ", translate each item separately and maintain the same delimiter in output.
+5. IMPORTANT - Preserve number format: If English uses digits (e.g., "100", "2.5"), Vietnamese MUST also use digits, NOT spell them out (e.g., "100" not "một trăm", "2.5" not "hai phẩy năm"). If English spells out numbers (e.g., "twenty"), Vietnamese should also spell them out, not convert to digits.
 
 Here are some examples:
 
@@ -33,6 +34,7 @@ Follow these rules strictly:
 2. Output ONLY the translated English text.
 3. DO NOT include any introductory phrases, explanations, variations, or conversational fillers (e.g., do not say "Here is the translation:", "Dưới đây là bản dịch:", etc.).
 4. When translating batch items separated by " ||| ", translate each item separately and maintain the same delimiter in output.
+5. IMPORTANT - Preserve number format: If Vietnamese uses digits (e.g., "100", "2.5"), English MUST also use digits, NOT spell them out (e.g., "100" not "one hundred", "2.5" not "two point five"). If Vietnamese spells out numbers (e.g., "hai mươi"), English should also spell them out, not convert to digits.
 
 Here are some examples:
 
