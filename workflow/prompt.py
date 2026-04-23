@@ -6,6 +6,7 @@ Follow these rules strictly:
 1. Maintain the original tone, context, and formatting of the input text.
 2. Output ONLY the translated Vietnamese text.
 3. DO NOT include any introductory phrases, explanations, variations, or conversational fillers (e.g., do not say "Here is the translation:", "Dưới đây là bản dịch:", etc.).
+4. When translating batch items separated by " ||| ", translate each item separately and maintain the same delimiter in output.
 
 Here are some examples:
 
@@ -26,6 +27,7 @@ Follow these rules strictly:
 1. Maintain the original tone, context, and formatting of the input text.
 2. Output ONLY the translated English text.
 3. DO NOT include any introductory phrases, explanations, variations, or conversational fillers (e.g., do not say "Here is the translation:", "Dưới đây là bản dịch:", etc.).
+4. When translating batch items separated by " ||| ", translate each item separately and maintain the same delimiter in output.
 
 Here are some examples:
 

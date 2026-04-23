@@ -11,27 +11,27 @@ def evaluate_node(state: TranslationState) -> TranslationState:
     - Tính Cosine Similarity bằng mô hình BAAI/bge-m3.
     - Tính BLEU score dùng NLTK.
     - Điểm cuối cùng = 0.8 * Cosine + 0.2 * BLEU.
+    
+    Node này chỉ chấm điểm và chọn variant tốt nhất (rule_check đã lọc trước).
     """
     original_text = state["input_text"]
     translated_texts = state.get("translated_texts", [])
     back_translated_texts = state.get("back_translated_texts", [])
+    is_batch = state.get("is_batch", False)
+    batch_delimiter = state.get("batch_delimiter", " ||| ")
     
     bge_model = get_bge_model()
-    
-    # 1. Prepare vectors for Cosine Similarity
-    orig_emb = bge_model.encode(original_text, convert_to_tensor=True)
-    
-    # 2. Prepare tokens and smoothing for BLEU score
     chencherry = SmoothingFunction()
-    # Phân tách văn bản gốc thành các tokens cho BLEU tham chiếu
+    
+    # Single reference tokens cho cả merged text
     reference_tokens = [original_text.lower().split()]
 
     scored_variants = []
     
     for vi_text, back_en_text in zip(translated_texts, back_translated_texts):
         # Cosine similarity
+        orig_emb = bge_model.encode(original_text, convert_to_tensor=True)
         back_emb = bge_model.encode(back_en_text, convert_to_tensor=True)
-        # util.cos_sim trả về ma trận 2D, gọi .item() để lấy giá trị float
         cosine_score = util.cos_sim(orig_emb, back_emb).item()
         
         # BLEU score
@@ -42,7 +42,7 @@ def evaluate_node(state: TranslationState) -> TranslationState:
             smoothing_function=chencherry.method1
         )
         
-        # Tính Final score
+        # Final score
         final_score = 0.8 * cosine_score + 0.2 * bleu_score
         
         scored_variants.append({
@@ -53,14 +53,14 @@ def evaluate_node(state: TranslationState) -> TranslationState:
             "final_score": final_score
         })
         
-    # Sort các bản dịch theo điểm (final_score giảm dần - điểm cao nhất lên đầu)
+    # Sort các bản dịch theo điểm (final_score giảm dần)
     scored_variants = sorted(scored_variants, key=lambda x: x["final_score"], reverse=True)
     
-    # Bản được duyệt làm kết quả cuối cùng phải là bản có điểm cao nhất (đầu mảng)
-    # Lưu ý: Sẽ trả về None nếu toàn bộ các bản dịch đều bị loại ở Rule Check Node
     final_translation = scored_variants[0]["vi_text"] if scored_variants else None
     
     return {
         "scored_variants": scored_variants,
-        "final_translation": final_translation
+        "final_translation": final_translation,
+        "is_batch": is_batch,
+        "batch_delimiter": batch_delimiter
     }

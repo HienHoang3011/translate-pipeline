@@ -9,6 +9,8 @@ def translate_vi_en_node(state: TranslationState) -> TranslationState:
     Node này tuỳ chỉnh temperature = 0.1 và nhận đầu vào từ mảng kết quả của node trước (translated_texts).
     """
     translated_texts = state.get("translated_texts", [])
+    is_batch = state.get("is_batch", False)
+    batch_delimiter = state.get("batch_delimiter", " ||| ")
     
     # Lấy model instance dùng chung
     model, tokenizer = get_model_and_tokenizer()
@@ -47,4 +49,8 @@ def translate_vi_en_node(state: TranslationState) -> TranslationState:
         en_text = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
         back_translated_texts.append(en_text)
 
-    return {"back_translated_texts": back_translated_texts}
+    return {
+        "back_translated_texts": back_translated_texts,
+        "is_batch": is_batch,
+        "batch_delimiter": batch_delimiter
+    }

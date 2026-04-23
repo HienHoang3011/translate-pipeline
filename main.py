@@ -1,7 +1,9 @@
 import argparse
 import json
 import os
-from workflow.builder import build_translation_workflow
+from workflow.graph.builder import build_translation_workflow
+
+BATCH_DELIMITER = " ||| "
 
 def process_data(data, app):
     if isinstance(data, dict):
@@ -13,14 +15,42 @@ def process_data(data, app):
                 new_data[k] = process_data(v, app)
         return new_data
     elif isinstance(data, list):
-        return [process_data(item, app) for item in data]
+        # Check nếu list chứa toàn strings - batch translate
+        if data and all(isinstance(item, str) for item in data):
+            print(f"\n--- Đang batch dịch {len(data)} items ---")
+            merged_text = BATCH_DELIMITER.join(data)
+            
+            initial_state = {
+                "input_text": merged_text,
+                "source_lang": "en",
+                "target_lang": "vi",
+                "is_batch": True,
+                "batch_delimiter": BATCH_DELIMITER
+            }
+            final_state = app.invoke(initial_state)
+            final_translation = final_state.get("final_translation")
+            
+            if final_translation:
+                # Split result back to list
+                translated_items = [item.strip() for item in final_translation.split(BATCH_DELIMITER)]
+                translated_items = [item for item in translated_items if item]  # Remove empty
+                print(f"🌟 Kết quả batch ({len(translated_items)} items)")
+                return translated_items if translated_items else data
+            else:
+                print("❌ Lỗi batch dịch, giữ nguyên bản gốc")
+                return data
+        else:
+            # Nested list hoặc mixed types
+            return [process_data(item, app) for item in data]
     elif isinstance(data, str):
-        # Gọi LangGraph để dịch chuỗi
+        # Single string - translate individually
         print(f"\n--- Đang dịch: {data[:100]}... ---")
         initial_state = {
             "input_text": data,
             "source_lang": "en",
-            "target_lang": "vi"
+            "target_lang": "vi",
+            "is_batch": False,
+            "batch_delimiter": BATCH_DELIMITER
         }
         final_state = app.invoke(initial_state)
         final_translation = final_state.get("final_translation")

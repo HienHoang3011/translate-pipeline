@@ -17,6 +17,8 @@ class TranslationState(TypedDict):
     input_text: str
     source_lang: str
     target_lang: str
+    is_batch: bool  # Batch mode (list items merged with delimiter)
+    batch_delimiter: str  # Delimiter used for batch (default: " ||| ")
     translated_texts: list[str]
     back_translated_texts: list[str]
     scored_variants: list[VariantScore]

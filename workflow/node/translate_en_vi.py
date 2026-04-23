@@ -12,6 +12,8 @@ def translate_en_vi_node(state: TranslationState) -> TranslationState:
     
     # Lấy model instance dùng chung
     model, tokenizer = get_model_and_tokenizer()
+    is_batch = state.get("is_batch", False)
+    batch_delimiter = state.get("batch_delimiter", " ||| ")
 
     # Dùng prompt chuyên Anh -> Việt
     messages = en_to_vi_prompt.format_messages(text=input_text)
@@ -49,4 +51,8 @@ def translate_en_vi_node(state: TranslationState) -> TranslationState:
 
     translated_texts = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
 
-    return {"translated_texts": translated_texts}
+    return {
+        "translated_texts": translated_texts,
+        "is_batch": is_batch,
+        "batch_delimiter": batch_delimiter
+    }
