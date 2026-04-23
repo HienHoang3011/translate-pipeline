@@ -20,7 +20,7 @@ def check_length_ratio_rule(source_text: str, target_text: str) -> bool:
     """
     Kiểm tra độ cân xứng số lượng từ giữa bản gốc và bản dịch.
     Tiếng Việt (các âm tiết rời) thường dài hơn tiếng Anh khoảng 1.1x - 1.4x tính theo khoảng trắng.
-    Vì vậy, tỉ lệ an toàn cho phép là từ 0.8 đến 1.6. Khoảng dịch này bao phủ hầu hết các trường hợp dịch thuật thực tế.
+    Vì vậy, tỉ lệ an toàn cho phép là từ 0.5 đến 2.0. Khoảng dịch này bao phủ hầu hết các trường hợp dịch thuật thực tế.
     """
     source_words_count = len(source_text.split())
     target_words_count = len(target_text.split())
@@ -29,7 +29,7 @@ def check_length_ratio_rule(source_text: str, target_text: str) -> bool:
         return target_words_count == 0
         
     ratio = target_words_count / source_words_count
-    return 0.8 <= ratio <= 1.6
+    return 0.5 <= ratio <= 2.0  # Mở rộng khoảng để tránh loại bỏ quá nhiều bản dịch có thể chấp nhận được
 
 def rule_check_node(state: TranslationState) -> TranslationState:
     """

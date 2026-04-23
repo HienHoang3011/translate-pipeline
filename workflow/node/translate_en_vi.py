@@ -41,7 +41,7 @@ def translate_en_vi_node(state: TranslationState) -> TranslationState:
         generated_ids = model.generate(
             **model_inputs,
             max_new_tokens=2048,
-            temperature=0.4,
+            temperature=0.7,
             do_sample=True,
             num_return_sequences=n_translations
         )
