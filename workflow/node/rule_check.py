@@ -33,66 +33,31 @@ def check_length_ratio_rule(source_text: str, target_text: str) -> bool:
 
 def rule_check_node(state: TranslationState) -> TranslationState:
     """
-    Node Rule-Based kiểm tra các quy tắc cứng. 
-    Node này nên được đặt ngay sau Node dịch Tiếng Anh -> Tiếng Việt.
+    Node Rule-Based kiểm tra các quy tắc cứng.
+    - Kiểm tra giữ nguyên số liệu (Numbers Consistency)
+    - Kiểm tra cân xứng độ dài từ (Length Ratio)
     
-    Hai chế độ:
-    - BATCH: Lọc từng item trong batch (so sánh EN item vs VI item)
-    - SINGLE: Lọc cả merged text (so sánh EN text vs VI text)
+    Cách hoạt động:
+    - BATCH: So cả chuỗi merged (không tách item)
+    - SINGLE: So chuỗi bình thường
     """
     original_text = state["input_text"]
     translated_texts = state.get("translated_texts", [])
-    is_batch = state.get("is_batch", False)
-    batch_delimiter = state.get("batch_delimiter", " ||| ")
     
     valid_translations = []
     
-    if not is_batch:
-        # ===== SINGLE MODE =====
-        for vi_text in translated_texts:
-            # Rule 1: Kiểm tra Giữ nguyên số liệu (Numbers Consistency)
-            if not check_numbers_rule(original_text, vi_text):
-                print(f"[REJECTED by Rule]: Lỗi số liệu không khớp!\n- Gốc: {original_text}\n- Bản dịch: {vi_text}\n---")
-                continue
-                
-            # Rule 2: Kiểm tra chênh lệch độ dài từ (Length Ratio)
-            if not check_length_ratio_rule(original_text, vi_text):
-                print(f"[REJECTED by Rule]: Mất cân đối độ dài từ!\n- Gốc: {original_text}\n- Bản dịch: {vi_text}\n---")
-                continue
+    for vi_text in translated_texts:
+        # Rule 1: Kiểm tra Giữ nguyên số liệu (Numbers Consistency)
+        if not check_numbers_rule(original_text, vi_text):
+            print(f"[REJECTED by Rule]: Numbers mismatch!\nOriginal: {original_text[:100]}...\nTranslated: {vi_text[:100]}...")
+            continue
             
-            # Nếu vượt qua tất cả rules:
-            valid_translations.append(vi_text)
-    else:
-        # ===== BATCH MODE =====
-        original_items = [item.strip() for item in original_text.split(batch_delimiter)]
+        # Rule 2: Kiểm tra chênh lệch độ dài từ (Length Ratio)
+        if not check_length_ratio_rule(original_text, vi_text):
+            print(f"[REJECTED by Rule]: Length ratio bad!\nOriginal: {original_text[:100]}...\nTranslated: {vi_text[:100]}...")
+            continue
         
-        for variant_idx, vi_batch in enumerate(translated_texts):
-            vi_items = [item.strip() for item in vi_batch.split(batch_delimiter)]
-            
-            # Check length match
-            if len(vi_items) != len(original_items):
-                print(f"[REJECTED V{variant_idx}]: Item count mismatch! EN={len(original_items)}, VI={len(vi_items)}")
-                continue
-            
-            # Lọc từng item trong batch
-            valid_items = []
-            for orig_en, trans_vi in zip(original_items, vi_items):
-                # Rule 1: Numbers Consistency
-                if not check_numbers_rule(orig_en, trans_vi):
-                    print(f"[REJECTED V{variant_idx}]: Numbers mismatch: {orig_en[:50]}... -> {trans_vi[:50]}...")
-                    continue
-                
-                # Rule 2: Length Ratio
-                if not check_length_ratio_rule(orig_en, trans_vi):
-                    print(f"[REJECTED V{variant_idx}]: Length ratio bad: {orig_en[:50]}... -> {trans_vi[:50]}...")
-                    continue
-                
-                valid_items.append(trans_vi)
-            
-            # Giữ variant nếu có ít nhất 1 item valid
-            if valid_items:
-                valid_batch = batch_delimiter.join(valid_items)
-                valid_translations.append(valid_batch)
-                print(f"[ACCEPT V{variant_idx}]: {len(valid_items)}/{len(original_items)} items passed")
+        # Passed all rules
+        valid_translations.append(vi_text)
         
     return {"translated_texts": valid_translations}
