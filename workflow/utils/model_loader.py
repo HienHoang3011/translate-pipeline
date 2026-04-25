@@ -1,17 +1,17 @@
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from openai import OpenAI
 from sentence_transformers import SentenceTransformer
 
-# Default model
-DEFAULT_MODEL_ID = "Qwen/Qwen3-30B-A3B-Instruct-2507"
+# vLLM Configuration
+DEFAULT_MODEL_ID = "google/gemma-4-e4b-it"
 MODEL_ID = DEFAULT_MODEL_ID
+VLLM_API_BASE = "http://localhost:5000/v1"
 
-_tokenizer = None
-_model = None
+_client = None
+_bge_model = None
 
 def set_model_id(model_id):
     """
-    Set model ID before loading. Should be called before get_model_and_tokenizer().
+    Set model ID before using. Should be called before making translation requests.
     """
     global MODEL_ID
     MODEL_ID = model_id
@@ -19,30 +19,27 @@ def set_model_id(model_id):
 
 def reset_model():
     """
-    Reset loaded model (for testing or switching models).
+    Reset OpenAI client (for testing or switching models).
     """
-    global _tokenizer, _model
-    _model = None
-    _tokenizer = None
+    global _client
+    _client = None
 
-def get_model_and_tokenizer():
+def get_openai_client():
     """
-    Load model dạng Singleton để có thể tái sử dụng (reuse) trên nhiều Node 
-    mà không phải load lại model nhiều lần tốn VRAM.
+    Get OpenAI client connected to local vLLM server (Singleton pattern).
+    Reuses same client across multiple nodes without recreating.
     """
-    global _tokenizer, _model
+    global _client
     
-    if _model is None or _tokenizer is None:
-        print(f"Loading tokenizer and model {MODEL_ID}...")
-        _tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
-        _model = AutoModelForCausalLM.from_pretrained(
-            MODEL_ID,
-            device_map="auto",
-            torch_dtype="auto" # Tự động nhận dạng datatype (Hỗ trợ tốt quantize model)
+    if _client is None:
+        print(f"Connecting to vLLM server at {VLLM_API_BASE}...")
+        _client = OpenAI(
+            api_key="EMPTY",  # vLLM doesn't require real API key
+            base_url=VLLM_API_BASE,
         )
-        print("Model loaded successfully.")
+        print("Connected to vLLM server successfully.")
         
-    return _model, _tokenizer
+    return _client
 
 _bge_model = None
 

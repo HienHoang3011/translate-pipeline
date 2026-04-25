@@ -1,52 +1,39 @@
-import torch
 from workflow.graph.stage import TranslationState
 from workflow.prompt import vi_to_en_prompt
-from workflow.utils.model_loader import get_model_and_tokenizer
+from workflow.utils.model_loader import get_openai_client, MODEL_ID
 
 def translate_vi_en_node(state: TranslationState) -> TranslationState:
     """
-    LangGraph node chuyên thực hiện việc dịch ngược văn bản từ Tiếng Việt sang Tiếng Anh.
-    Node này tuỳ chỉnh temperature = 0.1 và nhận đầu vào từ mảng kết quả của node trước (translated_texts).
+    LangGraph node dịch ngược từ Tiếng Việt sang Tiếng Anh qua vLLM API.
+    Temperature = 0.1 (deterministic) để tạo back-translation dùng cho scoring.
     """
     translated_texts = state.get("translated_texts", [])
     is_batch = state.get("is_batch", False)
     batch_delimiter = state.get("batch_delimiter", " ||| ")
     
-    # Lấy model instance dùng chung
-    model, tokenizer = get_model_and_tokenizer()
-
+    client = get_openai_client()
     back_translated_texts = []
 
-    # Xử lý dịch ngược cho TỪNG bản dịch tiếng Việt
+    # Back-translate each VI text to EN (1 variant per text)
     for vi_text in translated_texts:
         messages = vi_to_en_prompt.format_messages(text=vi_text)
         
-        hf_messages = []
+        # Convert to OpenAI format
+        openai_messages = []
         for msg in messages:
             role = "system" if msg.type == "system" else "user" if msg.type == "human" else msg.type
-            hf_messages.append({"role": role, "content": msg.content})
+            openai_messages.append({"role": role, "content": msg.content})
 
-        prompt_text = tokenizer.apply_chat_template(
-            hf_messages,
-            tokenize=False,
-            add_generation_prompt=True
+        # Generate back-translation with low temperature (deterministic)
+        response = client.chat.completions.create(
+            model=MODEL_ID,
+            messages=openai_messages,
+            temperature=0.1,
+            max_tokens=2048,
+            top_p=0.95
         )
         
-        model_inputs = tokenizer([prompt_text], return_tensors="pt").to(model.device)
-        prompt_length = model_inputs.input_ids.shape[1]
-
-        # Ở đây temperature = 0.1 và chỉ generate 1 bản duy nhất cho 1 đầu vào
-        with torch.no_grad():
-            generated_ids = model.generate(
-                **model_inputs,
-                max_new_tokens=2048,
-                temperature=0.1,
-                do_sample=True,
-                num_return_sequences=1
-            )
-        
-        generated_ids = generated_ids[:, prompt_length:]
-        en_text = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+        en_text = response.choices[0].message.content.strip()
         back_translated_texts.append(en_text)
 
     return {
