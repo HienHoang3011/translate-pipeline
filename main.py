@@ -30,6 +30,10 @@ def translate_qa_item(item, app):
     Translate question and choices in-place. Keep structure intact.
     Only translate text fields: "question" and "choices"
     Other fields like "answer", "subject" remain unchanged.
+    Format: Question: {question}
+            Choice 1: {choice1}
+            Choice 2: {choice2}
+            ...
     """
     question = item.get("question", "")
     answer_idx = item.get("answer", 0)
@@ -38,11 +42,13 @@ def translate_qa_item(item, app):
     if not question or answer_idx < 0 or answer_idx >= len(choices):
         return item
     
-    answer_text = choices[answer_idx]
+    # Format: Question: ... followed by Choice labels
+    qa_lines = [f"Question: {question}"]
+    for i, choice in enumerate(choices, 1):
+        qa_lines.append(f"Choice {i}: {choice}")
     
-    # Dịch question + answer merged để đảm bảo consistency
-    merged_text = f"Question: {question}\nAnswer: {answer_text}"
-    print(f"\n--- Dang dich: {merged_text[:100]}... ---")
+    merged_text = "\n".join(qa_lines)
+    print(f"\n--- INPUT TEXT ---\n{merged_text}\n")
     
     merged_translation = translate_text(merged_text, app)
     
@@ -50,39 +56,32 @@ def translate_qa_item(item, app):
         print("Loi dich, giu nguyen ban goc do Rule Checker bao loi")
         return item
     
-    # Parse kết quả
+    print(f"--- FULL OUTPUT TRANSLATION ---\n{merged_translation}\n")
+    
+    # Parse kết quả - preserve delimiters "Question:" và "Choice N:"
     question_translated = ""
-    if "Answer:" in merged_translation:
-        parts = merged_translation.split("Answer:", 1)
-        question_translated = parts[0].replace("Question:", "").strip()
-    else:
-        question_translated = merged_translation.strip()
+    choices_translated = []
     
-    print(f"Ket qua: Q: {question_translated[:100]}...")
+    lines = merged_translation.split("\n")
+    for line in lines:
+        if line.startswith("Question:"):
+            question_translated = line.replace("Question:", "").strip()
+        elif line.startswith("Choice"):
+            # Format: "Choice N: text"
+            choice_text = line.split(":", 1)[-1].strip()
+            if choice_text:
+                choices_translated.append(choice_text)
     
-    # Dịch tất cả choices theo batch
-    choices_batch = BATCH_DELIMITER.join(choices)
-    choices_state = {
-        "input_text": choices_batch,
-        "source_lang": "en",
-        "target_lang": "vi",
-        "is_batch": True,
-        "batch_delimiter": BATCH_DELIMITER
-    }
-    choices_result = app.invoke(choices_state)
-    choices_translated_str = choices_result.get("final_translation", "")
-    
-    if choices_translated_str:
-        choices_translated = [c.strip() for c in choices_translated_str.split(BATCH_DELIMITER)]
-        choices_translated = [c for c in choices_translated if c]
-    else:
-        choices_translated = choices  # Fallback to original
+    print(f"--- PARSED QUESTION ---\n{question_translated}\n")
+    print(f"--- PARSED CHOICES ({len(choices_translated)} items) ---")
+    for i, c in enumerate(choices_translated):
+        print(f"  {i}: {c}")
+    print()
     
     # Replace fields in original item, keep structure
-    item["question"] = question_translated
-    item["choices"] = choices_translated
+    item["question"] = question_translated if question_translated else question
+    item["choices"] = choices_translated if choices_translated else choices
     
-    print(f"Completed: {len(choices_translated)} choices translated")
     return item
 
 def process_data(data, app, skip_fields=None):

@@ -6,7 +6,7 @@ from workflow.utils.model_loader import get_model_and_tokenizer
 def translate_en_vi_node(state: TranslationState) -> TranslationState:
     """
     LangGraph node chuyên thực hiện việc dịch văn bản từ Tiếng Anh sang Tiếng Việt.
-    Node này tuỳ chỉnh temperature = 0.4.
+    Node này tuỳ chỉnh temperature = 0.7.
     """
     input_text = state["input_text"]
     
@@ -35,7 +35,7 @@ def translate_en_vi_node(state: TranslationState) -> TranslationState:
 
     prompt_length = model_inputs.input_ids.shape[1]
 
-    # Cấu hình generation cho node này (temp = 0.4, trả ra 3 bản dịch)
+    # Cấu hình generation cho node này (temp = 0.7, trả ra 3 bản dịch)
     n_translations = 3
     with torch.no_grad():
         generated_ids = model.generate(
