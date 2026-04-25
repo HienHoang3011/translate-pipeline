@@ -160,6 +160,13 @@ Examples:
         )
         
         # Wait for server to be ready
+        if args.no_wait:
+            # Exit immediately, server runs in background
+            print("\nServer started in background!")
+            print(f"Process ID: {process.pid}")
+            print(f"Logs will be printed to console\n")
+            return
+        
         if wait_for_server(host, port):
             print("\n" + "="*60)
             print("vLLM Server is ready!")
@@ -169,13 +176,10 @@ Examples:
             print(f"  Model: {model}")
             print("\nYou can now run the translation pipeline:")
             print(f"  python main.py --input_file <json_file>")
+            print("\nPress Ctrl+C to stop the server\n")
             
-            if args.no_wait:
-                print("\n(Script will exit, server continues running in background)")
-            else:
-                print("\nPress Ctrl+C to stop the server\n")
-                # Keep server running
-                process.wait()
+            # Keep server running
+            process.wait()
         else:
             print("Failed to connect to server")
             process.terminate()
