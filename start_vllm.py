@@ -138,7 +138,7 @@ Examples:
     print(f"Data Type: {args.dtype}")
     print(f"Tensor Parallel: {args.tensor_parallel}\n")
     
-    # Open log file if using --no-wait
+    # Open log file if using --no-wait or we want to run in background
     log_file = None
     if args.no_wait:
         try:
@@ -151,6 +151,21 @@ Examples:
         # Start vLLM server subprocess
         stdout_stream = log_file if args.no_wait else None
         
+        kwargs = {
+            "stdout": stdout_stream,
+            "stderr": subprocess.STDOUT,
+            "text": True
+        }
+        
+        if args.no_wait:
+            kwargs['stdin'] = subprocess.DEVNULL
+            # Detach the subprocess so it can keep running in background without blocking notebook cell
+            if sys.platform == 'win32':
+                kwargs['creationflags'] = subprocess.CREATE_NEW_PROCESS_GROUP
+            else:
+                kwargs['start_new_session'] = True
+                kwargs['close_fds'] = True
+                
         process = subprocess.Popen(
             [
                 "vllm", "serve",
@@ -162,25 +177,27 @@ Examples:
                 "--dtype", args.dtype,
                 "--tensor-parallel-size", str(args.tensor_parallel)
             ],
-            stdout=stdout_stream,
-            stderr=subprocess.STDOUT,
-            text=True
+            **kwargs
         )
         
-        # Wait for server to be ready
         if args.no_wait:
-            # Exit immediately, server runs in background
-            print("✓ Server started in background!")
-            print(f"  Process ID: {process.pid}")
-            print(f"  Logs: vllm_server.log")
-            print(f"  API: http://{host}:{port}/v1\n")
+            # Wait for server to be ready before exiting the script
+            # This ensures that the next notebook cell can immediately use the API
+            print(f"Server started in background (PID: {process.pid}). Waiting for it to run...")
+            if wait_for_server(host, port, timeout=args.timeout):
+                print("✓ Server is ready in the background!")
+                print(f"  Logs are being saved to: vllm_server.log")
+                print(f"  API is available at: http://{host}:{port}/v1\n")
+            else:
+                print("✗ Background server might have failed to start or timed out.")
             
-            # Close file handle
+            # Close file handle and exit we leave the server running
             if log_file:
                 log_file.close()
             return
-        
-        if wait_for_server(host, port):
+
+        # If not --no-wait, wait for server and block script
+        if wait_for_server(host, port, timeout=args.timeout):
             print("\n" + "="*60)
             print("vLLM Server is ready!")
             print("="*60)
