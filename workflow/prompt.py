@@ -11,7 +11,10 @@ Follow these rules strictly:
 
 3. When translating batch items separated by " ||| ", translate each item separately and preserve the delimiter exactly as-is in the output.
 
-4. CRITICAL - If the input contains the label "Question:", PRESERVE this label exactly as-is. Do NOT translate the label. Only translate the content following it.
+4. CRITICAL - PRESERVE structural labels exactly as-is. Do NOT translate:
+   - "Question:" MUST remain "Question:" (NOT "Câu hỏi:")
+   - "Choice 1:", "Choice 2:", etc. MUST remain unchanged (NOT "Chọn 1:", "Chọn 2:", etc.)
+   Only translate the CONTENT that follows these labels.
 
 5. Translate the question together with its answer choices to ensure semantic consistency and contextual accuracy.
 
@@ -30,8 +33,9 @@ Follow these rules strictly:
    - If English uses digits (e.g., "100", "2.5"), Vietnamese MUST also use digits.
    - If English spells out numbers (e.g., "twenty"), Vietnamese should also spell them out.
 
-10. Preserve structure and labels such as:
-    - "Choice 1:", "Choice 2:", etc. (do NOT translate "Choice")
+10. Preserve quoted text structures:
+    - If English has quotes like "thesecond layer, keep the same quote structure in Vietnamese
+    - Only translate the text INSIDE the quotes, not the quotes themselves
 
 ---
 
@@ -54,6 +58,15 @@ Choice 2: Những nhà khoa học nhỏ.
 Choice 3: Được hình thành bởi văn hóa.
 
 [Input]
+Question: What does "scaffolding" mean in psychology?
+Choice 1: "Building support structures for learning"
+Choice 2: "Temporary framework for development"
+[Output]
+Question: "Scaffolding" trong tâm lý học có nghĩa là gì?
+Choice 1: "Xây dựng các cấu trúc hỗ trợ cho học tập"
+Choice 2: "Khung tạm thời để phát triển"
+
+[Input]
 Any substance that can have a negative impact on fetal development is ___________.
 [Output]
 Bất kỳ chất nào có thể gây tác động tiêu cực đến sự phát triển của thai nhi là ___________.
@@ -69,7 +82,10 @@ Follow these rules strictly:
 
 3. When translating batch items separated by " ||| ", translate each item separately and preserve the delimiter exactly as-is in the output.
 
-4. CRITICAL - If the input contains "Question:" and "Choice" labels, PRESERVE these labels exactly as-is. Do NOT translate these labels. Only translate the content following them.
+4. CRITICAL - PRESERVE structural labels exactly as-is. Do NOT translate:
+   - "Question:" MUST remain "Question:" (do NOT translate back to English form if already English)
+   - "Choice 1:", "Choice 2:", etc. MUST remain unchanged
+   Only translate the CONTENT that follows these labels.
 
 5. Translate the question together with its answer choices to ensure semantic consistency and contextual accuracy.
 
@@ -91,8 +107,9 @@ Follow these rules strictly:
    - If Vietnamese uses digits (e.g., "100", "2.5"), English MUST also use digits.
    - If Vietnamese spells out numbers (e.g., "hai mươi"), English should also spell them out.
 
-10. Preserve structure and labels such as:
-    - "Choice 1:", "Choice 2:", etc. (do NOT translate "Choice")
+10. Preserve quoted text structures:
+    - If Vietnamese has quotes like "sự lớp thứ hai", translate the content while keeping the same quote structure
+    - Only translate the text INSIDE the quotes
 
 ---
 

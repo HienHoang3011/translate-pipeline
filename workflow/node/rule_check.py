@@ -36,10 +36,6 @@ def rule_check_node(state: TranslationState) -> TranslationState:
     Node Rule-Based kiểm tra các quy tắc cứng.
     - Kiểm tra số lượng choices (phải bằng bản gốc)
     - Kiểm tra cân xứng độ dài từ (Length Ratio): không chênh nhau quá 3 lần
-    
-    Cách hoạt động:
-    - BATCH: So cả chuỗi merged (không tách item)
-    - SINGLE: So chuỗi bình thường
     """
     original_text = state["input_text"]
     translated_texts = state.get("translated_texts", [])
@@ -49,8 +45,8 @@ def rule_check_node(state: TranslationState) -> TranslationState:
     for vi_text in translated_texts:
         # Rule 1: Kiểm tra số lượng choices
         if not check_choices_count_rule(original_text, vi_text):
-            original_count = len(re.findall(r'Choice\s+\d+:', original_text, re.IGNORECASE))
-            translated_count = len(re.findall(r'Choice\s+\d+:', vi_text, re.IGNORECASE))
+            original_count = len(re.findall(r'(?:Choice|Chọn)\s+\d+:', original_text, re.IGNORECASE))
+            translated_count = len(re.findall(r'(?:Choice|Chọn)\s+\d+:', vi_text, re.IGNORECASE))
             print(f"[REJECTED by Rule]: Choices count mismatch! Original: {original_count}, Translated: {translated_count}\nOriginal: {original_text[:100]}...\nTranslated: {vi_text[:100]}...")
             continue
         
