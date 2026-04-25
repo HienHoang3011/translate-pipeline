@@ -103,6 +103,12 @@ Examples:
     )
     
     parser.add_argument(
+        "--no-wait",
+        action="store_true",
+        help="Exit script after server is ready (server runs in background)"
+    )
+    
+    parser.add_argument(
         "--timeout",
         type=int,
         default=300,
@@ -154,7 +160,7 @@ Examples:
         )
         
         # Wait for server to be ready
-        if wait_for_server(host, port, timeout=args.timeout):
+        if wait_for_server(host, port):
             print("\n" + "="*60)
             print("vLLM Server is ready!")
             print("="*60)
@@ -163,10 +169,13 @@ Examples:
             print(f"  Model: {model}")
             print("\nYou can now run the translation pipeline:")
             print(f"  python main.py --input_file <json_file>")
-            print("\nPress Ctrl+C to stop the server\n")
             
-            # Keep server running
-            process.wait()
+            if args.no_wait:
+                print("\n(Script will exit, server continues running in background)")
+            else:
+                print("\nPress Ctrl+C to stop the server\n")
+                # Keep server running
+                process.wait()
         else:
             print("Failed to connect to server")
             process.terminate()
