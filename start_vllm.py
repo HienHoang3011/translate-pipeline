@@ -136,13 +136,21 @@ Examples:
     print(f"GPU Memory: {args.gpu_memory * 100}%")
     print(f"Max Length: {args.max_len}")
     print(f"Data Type: {args.dtype}")
-    print(f"Tensor Parallel: {args.tensor_parallel}")
-    print("Press Ctrl+C to stop the server\n")
+    print(f"Tensor Parallel: {args.tensor_parallel}\n")
+    
+    # Open log file if using --no-wait
+    log_file = None
+    if args.no_wait:
+        try:
+            log_file = open("vllm_server.log", "w")
+        except IOError as e:
+            print(f"ERROR: Cannot open log file: {e}")
+            sys.exit(1)
     
     try:
-        # Start vLLM server - show logs in real-time
-        print("vLLM Server Output:")
-        print("-" * 60)
+        # Start vLLM server subprocess
+        stdout_stream = log_file if args.no_wait else None
+        
         process = subprocess.Popen(
             [
                 "vllm", "serve",
@@ -154,7 +162,7 @@ Examples:
                 "--dtype", args.dtype,
                 "--tensor-parallel-size", str(args.tensor_parallel)
             ],
-            stdout=None,  # Show logs on console
+            stdout=stdout_stream,
             stderr=subprocess.STDOUT,
             text=True
         )
@@ -162,9 +170,14 @@ Examples:
         # Wait for server to be ready
         if args.no_wait:
             # Exit immediately, server runs in background
-            print("\nServer started in background!")
-            print(f"Process ID: {process.pid}")
-            print(f"Logs will be printed to console\n")
+            print("✓ Server started in background!")
+            print(f"  Process ID: {process.pid}")
+            print(f"  Logs: vllm_server.log")
+            print(f"  API: http://{host}:{port}/v1\n")
+            
+            # Close file handle
+            if log_file:
+                log_file.close()
             return
         
         if wait_for_server(host, port):
@@ -193,6 +206,10 @@ Examples:
         except subprocess.TimeoutExpired:
             process.kill()
         print("Server stopped.")
+    finally:
+        # Close log file if open
+        if log_file and not log_file.closed:
+            log_file.close()
 
 if __name__ == "__main__":
     main()
