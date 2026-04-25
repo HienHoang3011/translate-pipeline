@@ -49,8 +49,8 @@ def main():
                 model,
                 "--host", "0.0.0.0",
                 "--port", "5000",
-                "--gpu-memory-utilization", "0.9",
-                "--max-model-len", "16384",
+                "--gpu-memory-utilization", "0.85",
+                "--max-model-len", "8192",
                 "--dtype", "auto",
                 "--tensor-parallel-size", "1"
             ],

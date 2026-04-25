@@ -22,7 +22,7 @@ Output Text / List Items
 
 - **LangGraph**: Workflow orchestration framework
 - **vLLM**: Local model inference server (OpenAI API compatible)
-- **Gemma-4-E4B**: Default translation model
+- **Gemma-4-E2B**: Default translation model
 - **BAAI/bge-m3**: Semantic embedding model
 - **OpenAI Python SDK**: API client để gọi vLLM server
 
@@ -47,7 +47,7 @@ python setup_vllm.py
 python start_vllm.py
 ```
 
-Server sẽ bắt đầu tại `http://localhost:5000/v1` với model mặc định `google/gemma-4-E4B-it`
+Server sẽ bắt đầu tại `http://localhost:5000/v1` với model mặc định `google/gemma-4-E2B-it`
 
 ### Chạy Pipeline (Terminal 2):
 
@@ -77,7 +77,7 @@ python main.py --input_file data.json --output_name result.json --model "your-mo
 ### Tham số truyền vào (Arguments):
 - `--input_file`: Đường dẫn đến file JSON đầu vào chứa dữ liệu cần dịch. **(Bắt buộc)**
 - `--output_name`: Tên hoặc đường dẫn của file JSON đầu ra tương ứng sau khi chương trình dịch xong. **(Bắt buộc)**
-- `--model`: Model ID để tải (default: `google/gemma-4-E4B-it`). **(Tùy chọn)**
+- `--model`: Model ID để tải (default: `google/gemma-4-E2B-it`). **(Tùy chọn)**
 - `--skip_fields`: Danh sách các trường bỏ qua việc dịch, cách nhau bằng dấu phẩy. **(Tùy chọn)**
 
 ## Xử lý dữ liệu
