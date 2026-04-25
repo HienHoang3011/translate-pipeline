@@ -6,6 +6,85 @@ from workflow.utils.model_loader import set_model_id, DEFAULT_MODEL_ID
 
 BATCH_DELIMITER = " ||| "
 
+def translate_text(text, app):
+    """
+    Helper function to translate a single text.
+    """
+    if not text:
+        return text
+    
+    initial_state = {
+        "input_text": text,
+        "source_lang": "en",
+        "target_lang": "vi",
+        "is_batch": False,
+        "batch_delimiter": BATCH_DELIMITER
+    }
+    final_state = app.invoke(initial_state)
+    final_translation = final_state.get("final_translation")
+    
+    return final_translation if final_translation else text
+
+def translate_qa_item(item, app):
+    """
+    Translate question and choices in-place. Keep structure intact.
+    Only translate text fields: "question" and "choices"
+    Other fields like "answer", "subject" remain unchanged.
+    """
+    question = item.get("question", "")
+    answer_idx = item.get("answer", 0)
+    choices = item.get("choices", [])
+    
+    if not question or answer_idx < 0 or answer_idx >= len(choices):
+        return item
+    
+    answer_text = choices[answer_idx]
+    
+    # Dịch question + answer merged để đảm bảo consistency
+    merged_text = f"Question: {question}\nAnswer: {answer_text}"
+    print(f"\n--- Dang dich: {merged_text[:100]}... ---")
+    
+    merged_translation = translate_text(merged_text, app)
+    
+    if not merged_translation:
+        print("Loi dich, giu nguyen ban goc do Rule Checker bao loi")
+        return item
+    
+    # Parse kết quả
+    question_translated = ""
+    if "Answer:" in merged_translation:
+        parts = merged_translation.split("Answer:", 1)
+        question_translated = parts[0].replace("Question:", "").strip()
+    else:
+        question_translated = merged_translation.strip()
+    
+    print(f"Ket qua: Q: {question_translated[:100]}...")
+    
+    # Dịch tất cả choices theo batch
+    choices_batch = BATCH_DELIMITER.join(choices)
+    choices_state = {
+        "input_text": choices_batch,
+        "source_lang": "en",
+        "target_lang": "vi",
+        "is_batch": True,
+        "batch_delimiter": BATCH_DELIMITER
+    }
+    choices_result = app.invoke(choices_state)
+    choices_translated_str = choices_result.get("final_translation", "")
+    
+    if choices_translated_str:
+        choices_translated = [c.strip() for c in choices_translated_str.split(BATCH_DELIMITER)]
+        choices_translated = [c for c in choices_translated if c]
+    else:
+        choices_translated = choices  # Fallback to original
+    
+    # Replace fields in original item, keep structure
+    item["question"] = question_translated
+    item["choices"] = choices_translated
+    
+    print(f"Completed: {len(choices_translated)} choices translated")
+    return item
+
 def process_data(data, app, skip_fields=None):
     if skip_fields is None:
         skip_fields = []
@@ -44,8 +123,17 @@ def process_data(data, app, skip_fields=None):
                 print("Loi batch dich, giu nguyen ban goc")
                 return data
         else:
-            # Nested list hoặc mixed types
-            return [process_data(item, app, skip_fields) for item in data]
+            # Nested list hoặc mixed types - xử lý item riêng lẻ
+            result = []
+            for item in data:
+                # Nếu là dict với structure question/answer, dịch và lưu vào translations
+                if isinstance(item, dict) and "question" in item and "answer" in item and "choices" in item:
+                    translated_item = translate_qa_item(item, app)
+                    result.append(translated_item)
+                else:
+                    # Không phải structure question/answer, xử lý bình thường
+                    result.append(process_data(item, app, skip_fields))
+            return result
     elif isinstance(data, str):
         # Single string - translate individually
         print(f"\n--- Dang dich: {data[:100]}... ---")
