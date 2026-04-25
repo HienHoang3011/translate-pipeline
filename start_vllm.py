@@ -40,7 +40,9 @@ def main():
     print("Press Ctrl+C to stop the server\n")
     
     try:
-        # Start vLLM server
+        # Start vLLM server - show logs in real-time
+        print("vLLM Server Output:")
+        print("-" * 60)
         process = subprocess.Popen(
             [
                 "vllm", "serve",
@@ -52,7 +54,7 @@ def main():
                 "--dtype", "auto",
                 "--tensor-parallel-size", "1"
             ],
-            stdout=subprocess.PIPE,
+            stdout=None,  # Show logs on console
             stderr=subprocess.STDOUT,
             text=True
         )
