@@ -1,3 +1,4 @@
+import torch
 from openai import OpenAI
 from sentence_transformers import SentenceTransformer
 
