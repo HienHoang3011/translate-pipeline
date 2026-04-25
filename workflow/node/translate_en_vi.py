@@ -1,6 +1,7 @@
 from workflow.graph.stage import TranslationState
 from workflow.prompt import en_to_vi_prompt
-from workflow.utils.model_loader import get_openai_client, MODEL_ID
+from workflow.utils import model_loader
+from workflow.utils.model_loader import get_openai_client
 
 def translate_en_vi_node(state: TranslationState) -> TranslationState:
     """
@@ -28,7 +29,7 @@ def translate_en_vi_node(state: TranslationState) -> TranslationState:
     
     for _ in range(n_translations):
         response = client.chat.completions.create(
-            model=MODEL_ID,
+            model=model_loader.MODEL_ID,
             messages=openai_messages,
             temperature=0.7,
             max_tokens=2048,
