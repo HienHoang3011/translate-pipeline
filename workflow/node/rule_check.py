@@ -20,11 +20,11 @@ def check_length_ratio_rule(source_text: str, target_text: str) -> bool:
 def check_choices_count_rule(source_text: str, target_text: str) -> bool:
     """
     Kiểm tra số lượng choices trong bản dịch có bằng bản gốc không.
-    Tìm các dòng bắt đầu bằng "Choice " và đếm số lượng.
+    Tìm các pattern như "Choice N:", "Chọn N:", "A.", "B.", etc.
     """
-    # Đếm số lượng "Choice N:" trong source
-    source_choices = re.findall(r'Choice\s+\d+:', source_text, re.IGNORECASE)
-    target_choices = re.findall(r'Choice\s+\d+:', target_text, re.IGNORECASE)
+    # Tìm tất cả các pattern lựa chọn (tiếng Anh "Choice" hoặc tiếng Việt "Chọn")
+    source_choices = re.findall(r'(?:Choice|Chọn)\s+\d+:', source_text, re.IGNORECASE)
+    target_choices = re.findall(r'(?:Choice|Chọn)\s+\d+:', target_text, re.IGNORECASE)
     
     source_count = len(source_choices)
     target_count = len(target_choices)
