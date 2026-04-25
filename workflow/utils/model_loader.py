@@ -3,7 +3,7 @@ from openai import OpenAI
 from sentence_transformers import SentenceTransformer
 
 # vLLM Configuration
-DEFAULT_MODEL_ID = "google/gemma-4-e4b-it"
+DEFAULT_MODEL_ID = "google/gemma-4-E4B-it"
 MODEL_ID = DEFAULT_MODEL_ID
 VLLM_API_BASE = "http://localhost:5000/v1"
 
