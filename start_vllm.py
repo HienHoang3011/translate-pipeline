@@ -1,23 +1,31 @@
 #!/usr/bin/env python3
 """
-Start vLLM server for local inference.
-Chạy: python start_vllm.py
+Start vLLM server for local inference with configurable parameters.
+Chạy: python start_vllm.py [options]
+
+Examples:
+  python start_vllm.py
+  python start_vllm.py --port 5001 --gpu-memory 0.7
+  python start_vllm.py --model "google/gemma-2-9b-it" --max-len 4096
 """
 
 import subprocess
 import time
 import requests
 import sys
+import argparse
 from workflow.utils.model_loader import DEFAULT_MODEL_ID
 
-def wait_for_server(timeout=300, interval=10):
+def wait_for_server(host, port, timeout=300, interval=10):
     """Wait for vLLM server to be ready."""
+    url = f"http://{host}:{port}/health"
     print(f"Waiting for server to be ready (timeout: {timeout}s)...")
+    print(f"Health check URL: {url}")
     start_time = time.time()
     
     while time.time() - start_time < timeout:
         try:
-            response = requests.get("http://localhost:5000/health")
+            response = requests.get(url)
             if response.status_code == 200:
                 print("✓ Server is up and running!")
                 return True
@@ -32,11 +40,97 @@ def wait_for_server(timeout=300, interval=10):
     return False
 
 def main():
-    model = DEFAULT_MODEL_ID
+    parser = argparse.ArgumentParser(
+        description="Start vLLM server with configurable parameters",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python start_vllm.py
+  python start_vllm.py --port 5001 --gpu-memory 0.7
+  python start_vllm.py --model "google/gemma-2-9b-it" --max-len 4096
+  python start_vllm.py --host 0.0.0.0 --port 8000 --dtype float16
+        """
+    )
+    
+    parser.add_argument(
+        "--model",
+        type=str,
+        default=DEFAULT_MODEL_ID,
+        help=f"Model ID to load (default: {DEFAULT_MODEL_ID})"
+    )
+    
+    parser.add_argument(
+        "--host",
+        type=str,
+        default="0.0.0.0",
+        help="Host to bind server to (default: 0.0.0.0)"
+    )
+    
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=5000,
+        help="Port to run server on (default: 5000)"
+    )
+    
+    parser.add_argument(
+        "--gpu-memory",
+        type=float,
+        default=0.85,
+        help="GPU memory utilization (0.0-1.0, default: 0.85)"
+    )
+    
+    parser.add_argument(
+        "--max-len",
+        type=int,
+        default=8192,
+        help="Maximum model length (default: 8192)"
+    )
+    
+    parser.add_argument(
+        "--dtype",
+        type=str,
+        default="auto",
+        choices=["auto", "float16", "float32", "bfloat16"],
+        help="Data type for model (default: auto)"
+    )
+    
+    parser.add_argument(
+        "--tensor-parallel",
+        type=int,
+        default=1,
+        help="Tensor parallelism size (default: 1)"
+    )
+    
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=300,
+        help="Server startup timeout in seconds (default: 300)"
+    )
+    
+    args = parser.parse_args()
+    
+    # Validate arguments
+    if not 0 < args.gpu_memory <= 1.0:
+        print("ERROR: --gpu-memory must be between 0 and 1")
+        sys.exit(1)
+    
+    if args.port < 1024 or args.port > 65535:
+        print("ERROR: --port must be between 1024 and 65535")
+        sys.exit(1)
+    
+    model = args.model
+    host = args.host
+    port = args.port
     
     print("Starting vLLM server...")
     print(f"Model: {model}")
-    print("API: http://localhost:5000/v1")
+    print(f"API: http://{host}:{port}/v1")
+    print(f"GPU Memory: {args.gpu_memory * 100}%")
+    print(f"Max Length: {args.max_len}")
+    print(f"Data Type: {args.dtype}")
+    print(f"Tensor Parallel: {args.tensor_parallel}")
     print("Press Ctrl+C to stop the server\n")
     
     try:
@@ -47,12 +141,12 @@ def main():
             [
                 "vllm", "serve",
                 model,
-                "--host", "0.0.0.0",
-                "--port", "5000",
-                "--gpu-memory-utilization", "0.85",
-                "--max-model-len", "8192",
-                "--dtype", "auto",
-                "--tensor-parallel-size", "1"
+                "--host", host,
+                "--port", str(port),
+                "--gpu-memory-utilization", str(args.gpu_memory),
+                "--max-model-len", str(args.max_len),
+                "--dtype", args.dtype,
+                "--tensor-parallel-size", str(args.tensor_parallel)
             ],
             stdout=None,  # Show logs on console
             stderr=subprocess.STDOUT,
@@ -60,15 +154,15 @@ def main():
         )
         
         # Wait for server to be ready
-        if wait_for_server():
+        if wait_for_server(host, port, timeout=args.timeout):
             print("\n" + "="*60)
             print("vLLM Server is ready!")
             print("="*60)
             print("\nServer Details:")
-            print(f"  Base URL: http://localhost:5000/v1")
+            print(f"  Base URL: http://{host}:{port}/v1")
             print(f"  Model: {model}")
             print("\nYou can now run the translation pipeline:")
-            print("  python main.py --input_file <json_file>")
+            print(f"  python main.py --input_file <json_file>")
             print("\nPress Ctrl+C to stop the server\n")
             
             # Keep server running
